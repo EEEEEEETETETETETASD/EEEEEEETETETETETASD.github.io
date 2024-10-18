@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tic-Tac-Toe</title>
+    <title>GamePub V2</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16">
+    <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
     <style>
         body { font-family: Arial, sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .board { display: grid; grid-template-columns: repeat(3, 100px); grid-gap: 5px; }
@@ -24,15 +29,100 @@
             background-color: #333;
             color: white;
         }
+        /* Halloween mode styles */
+        .halloween-mode {
+            background-color: #1a1a1a;
+            color: #ff6600;
+            font-family: 'Creepster', cursive;
+        }
+        .halloween-mode .back-button, .halloween-mode .reset-button {
+            background: #ff6600;
+            color: #1a1a1a;
+            border: 2px solid #ff6600;
+            font-family: 'Creepster', cursive;
+        }
+        .halloween-mode .cell {
+            background-color: #4a4a4a;
+            color: #ff6600;
+            border: 2px solid #ff6600;
+            box-shadow: 0 0 10px #ff6600;
+        }
+        #context-menu {
+    position: fixed;
+    z-index: 10000;
+    width: 150px;
+    background: #1b1a1a;
+    border-radius: 5px;
+    display: none;
+}
+
+#context-menu ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#context-menu ul li {
+    padding: 10px 15px;
+    cursor: pointer;
+    color: white;
+}
+
+#context-menu ul li:hover {
+    background: #343434;
+}
+
+#content-area {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.dark-mode #context-menu {
+            background: #333;
+        }
+
+        .dark-mode #context-menu ul li {
+            color: #fff;
+        }
+
+        .dark-mode #context-menu ul li:hover {
+            background: #555;
+        }
+
+        /* Halloween mode styles for context menu */
+        .halloween-mode #context-menu {
+            background: #1a1a1a;
+            border: 2px solid #ff6600;
+        }
+
+        .halloween-mode #context-menu ul li {
+            color: #ff6600;
+            font-family: 'Creepster', cursive;
+        }
+
+        .halloween-mode #context-menu ul li:hover {
+            background: #ff6600;
+            color: #1a1a1a;
     </style>
 </head>
 <body>
-    <h1> </h1>
-    <h2> </h2>
-    <h3>GamePub Rewrite</h3>
+    <div id="context-menu">
+        <ul>
+            <li onclick="window.location.href = 'new.html'">Reload</li>
+            <li class="reset-color" onclick="reset()">Reset Style</li>
+            <li onclick="window.location.href = 'setup.html'">Go Back</li>
+            <li class="reset-game" onclick="resetBoard();">Reset Board</li>
+        </ul>
+    </div>
+    <div id="content-area">
+        <div>
+    <h1>GamePub Rewrite</h1>
     <button class="back-button" onclick="backHome();">Back to Home</button>
     <button class="reset-button" onclick="resetBoard();">Reset</button>
+    <div class="button-seperate"></div>
     <button onclick="dark()">Dark Mode</button>
+    <button onclick="halloween()">Halloween Mode</button>
     <div class="board">
         <div class="cell" data-index="0"></div>
         <div class="cell" data-index="1"></div>
@@ -44,14 +134,56 @@
         <div class="cell" data-index="7"></div>
         <div class="cell" data-index="8"></div>
     </div>
+    </div>
+    </div>
     <script>
+     if (localStorage.getItem('banned') === 'true') {
+        window.location.href = 'index.html'
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+    const contextMenu = document.getElementById('context-menu');
+    const contentArea = document.getElementById('content-area');
+
+    contentArea.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const { clientX: mouseX, clientY: mouseY } = e;
+        
+        contextMenu.style.top = `${mouseY}px`;
+        contextMenu.style.left = `${mouseX}px`;
+        
+        contextMenu.style.display = 'block';
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target.offsetParent != contextMenu) {
+            contextMenu.style.display = 'none';
+        }
+    });
+
+    // Add functionality to menu items
+    const menuItems = contextMenu.querySelectorAll('li');
+    menuItems.forEach((item, index) => {
+        item.addEventListener('click', () => {
+            console.log(`Option ${index + 1} clicked`);
+            contextMenu.style.display = 'none';
+        });
+    });
+});
+function reset() {
+            localStorage.setItem('Halloween', 'false');
+            localStorage.setItem('Dark', 'false');
+            document.body.classList.remove('dark-mode');
+            document.body.classList.remove('halloween-mode');
+        }
+        document.addEventListener('contextmenu', event => event.preventDefault());
         const board = document.querySelector('.board');
         const cells = document.querySelectorAll('.cell');
         let currentPlayer = 'X';
+        let gameActive = true;
         const winningCombinations = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8],
             [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6], [1, 6, 8]
+            [0, 4, 8], [2, 4, 6]
         ];
 
         // Check and apply dark mode state from localStorage
@@ -59,13 +191,32 @@
             document.body.classList.add('dark-mode');
         }
 
+        // Check and apply Halloween mode state from localStorage
+        if (localStorage.getItem('Halloween') === 'true') {
+            document.body.classList.add('halloween-mode');
+        }
+
         function dark() {
+            document.body.classList.remove('halloween-mode');
+            localStorage.setItem('Halloween', 'false');
             if (document.body.classList.contains('dark-mode')) {
                 document.body.classList.remove('dark-mode');
                 localStorage.setItem('Dark', 'false');
             } else {
                 document.body.classList.add('dark-mode');
                 localStorage.setItem('Dark', 'true');
+            }
+        }
+
+        function halloween() {
+            document.body.classList.remove('dark-mode');
+            localStorage.setItem('Dark', 'false');
+            if (document.body.classList.contains('halloween-mode')) {
+                document.body.classList.remove('halloween-mode');
+                localStorage.setItem('Halloween', 'false');
+            } else {
+                document.body.classList.add('halloween-mode');
+                localStorage.setItem('Halloween', 'true');
             }
         }
 
@@ -83,21 +234,25 @@
 
         function handleClick(event) {
             const cell = event.target;
-            if (cell.textContent === '') {
+            if (cell.textContent === '' && gameActive) {
                 cell.textContent = currentPlayer;
                 if (checkWin()) {
                     alert(`${currentPlayer} wins!`);
                     cells.forEach(cell => cell.textContent = '');
-                    currentPlayer = 'X';
+                currentPlayer = 'X';
+                gameActive = true;
+                } else if (Array.from(cells).every(cell => cell.textContent !== '')) {
+                    alert('It\'s a draw!');
+                    gameActive = false;
                 } else {
                     currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
                 }
             }
         }
-        
+
         function backHome() {
             if (allCellsEmpty()) {
-                window.location.href='index.html'
+                window.location.href='setup.html'
             } else {
                 alert('The board must be empty!')
             }
@@ -107,9 +262,10 @@
             if (allCellsEmpty()) {
                 alert('There was nothing to reset!')
             } else {
-            cells.forEach(cell => cell.textContent = '');
-            currentPlayer = 'X';
-            alert('Board Successfully Reset!')
+                cells.forEach(cell => cell.textContent = '');
+                currentPlayer = 'X';
+                gameActive = true;
+                alert('Board Successfully Reset!')
             }
         }
 

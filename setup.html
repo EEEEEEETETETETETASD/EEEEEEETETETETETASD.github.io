@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>GamePub V2</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16">
+    <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            transition: all 0.3s ease;
+        }
+        .stats, .Clear {
+            font-size: 1.5em;
+            height: 65px;
+            width: 150px;
+            margin-top: 1px;
+            padding: 1px 10px;
+            cursor: pointer;
+            background: white;
+            color: black;
+            border-radius: 15px;
+            border: 2px solid Black;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .alert {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1001;
+        }
+        .alert button {
+            margin-top: 10px;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        /* Dark mode styles */
+        .dark-mode {
+            background-color: black;
+            color: white;
+        }
+        .dark-mode .stats, .dark-mode .Clear {
+            background: black;
+            color: white;
+            border: 2px solid white;
+        }
+        .dark-mode .alert {
+            background-color: black;
+            color: white;
+        }
+        /* Halloween mode styles */
+        .halloween-mode {
+            background-color: #1a1a1a;
+            color: #ff6600;
+            font-family: 'Creepster', cursive;
+        }
+        .halloween-mode .stats, .halloween-mode .Clear, .halloween-mode button {
+            background: #ff6600;
+            color: #1a1a1a;
+            border: 2px solid #ff6600;
+            font-family: 'Creepster', cursive;
+        }
+        .halloween-mode .alert {
+            background-color: #1a1a1a;
+            color: #ff6600;
+            border: 2px solid #ff6600;
+        }
+        .halloween-mode #gameArea {
+            background-color: #4a4a4a;
+            color: #ff6600;
+            border: 2px solid #ff6600;
+            box-shadow: 0 0 10px #ff6600;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        /*start of context menu*/
+        #context-menu {
+    position: fixed;
+    z-index: 10000;
+    width: 150px;
+    background: #1b1a1a;
+    border-radius: 5px;
+    display: none;
+}
+
+#context-menu ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#context-menu ul li {
+    padding: 10px 15px;
+    cursor: pointer;
+    color: white;
+}
+
+#context-menu ul li:hover {
+    background: #343434;
+}
+
+#content-area {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.dark-mode #context-menu {
+            background: #333;
+        }
+
+        .dark-mode #context-menu ul li {
+            color: #fff;
+        }
+
+        .dark-mode #context-menu ul li:hover {
+            background: #555;
+        }
+
+        /* Halloween mode styles for context menu */
+        .halloween-mode #context-menu {
+            background: #1a1a1a;
+            border: 2px solid #ff6600;
+        }
+
+        .halloween-mode #context-menu ul li {
+            color: #ff6600;
+            font-family: 'Creepster', cursive;
+        }
+
+        .halloween-mode #context-menu ul li:hover {
+            background: #ff6600;
+            color: #1a1a1a;
+            /*end of context menu*/
+    </style>
+</head>
+<link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+<body>
+    <div id="context-menu">
+        <ul>
+            <li onclick="window.location.href = 'setup.html'">Reload</li>
+            <li class="reset-color" onclick="reset()">Reset Style</li>
+            <li onclick="download()">Download File</li>
+        </ul>
+    </div>
+    <div id="content-area">
+        <div>
+    <h1>GamePub V2 (Rewrite) - Halloween Edition</h1>
+    <button onclick="dark()">Dark Mode</button>
+    <button onclick="halloween()">Halloween Mode</button>
+    <h2>V2.13: Afte a while with no updates, I have decided to add a new game (wordle) and make a device detection system.</h2>
+    <button onclick="toggleGame(1)">1. Number Game</button>
+    <button onclick="toggleGame(2)">2. Rock Paper Scissors</button>
+    <button onclick="toggleGame(3)">3. Quiz Game</button>
+    <button onclick="toggleGame(4)">4. Tic Tac Toe</button>
+    <button onclick="toggleGame(5)">5. Memory Matching</button>
+    <button onclick="toggleGame(6)">6. Invaders</button>
+    <button onclick="window.location.href = 'apple.html'">7. Apple</button>
+    <div class="more-games"></div>
+    <button onclick="window.location.href = 'wordle.html'">8. Wordle</button>
+    <div id="gameArea"></div>
+    <div id="customAlert" class="alert">
+        <p>There's already a game active, are you sure you'd like to continue with this action?</p>
+        <button onclick="clearGameArea()">Clear</button>
+        <button onclick="closeAlert()">Cancel</button>
+        <button id="launchAnyways">Launch Anyways</button>
+    </div>
+    <div id="overlay" class="overlay"></div>
+        </div>
+    </div>
+    <script>
+     if (localStorage.getItem('banned') === 'true') {
+        window.location.href = 'index.html'
+    }
+    //beginning of the dropdown
+    document.addEventListener('DOMContentLoaded', () => {
+    const contextMenu = document.getElementById('context-menu');
+    const contentArea = document.getElementById('content-area');
+
+    contentArea.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const { clientX: mouseX, clientY: mouseY } = e;
+        
+        contextMenu.style.top = `${mouseY}px`;
+        contextMenu.style.left = `${mouseX}px`;
+        
+        contextMenu.style.display = 'block';
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target.offsetParent != contextMenu) {
+            contextMenu.style.display = 'none';
+        }
+    });
+
+    // Add functionality to menu items
+    const menuItems = contextMenu.querySelectorAll('li');
+    menuItems.forEach((item, index) => {
+        item.addEventListener('click', () => {
+            console.log(`Option ${index + 1} clicked`);
+            contextMenu.style.display = 'none';
+        });
+    });
+});
+function reset() {
+            localStorage.setItem('Halloween', 'false');
+            localStorage.setItem('Dark', 'false');
+            document.body.classList.remove('dark-mode');
+            document.body.classList.remove('halloween-mode');
+        }
+    //end area of dropdown
+    function download() {
+    // Create an anchor element
+    const link = document.createElement('a');
+    
+    // Set the href attribute to the file path
+    link.href = '/GamePubV2.zip';
+    
+    // Set the download attribute to force download
+    link.download = 'GamePubV2.zip';
+    
+    // Append the anchor to the body
+    document.body.appendChild(link);
+    
+    // Programmatically click the link to trigger the download
+    link.click();
+    
+    // Remove the link from the document
+    document.body.removeChild(link);
+}
+    document.addEventListener('contextmenu', event => event.preventDefault());
+        const gameArea = document.getElementById('gameArea');
+        let currentGame = null;
+        let pendingGame = null;
+
+        // Check and apply dark mode state from localStorage
+        if (localStorage.getItem('Dark') === 'true') {
+            document.body.classList.add('dark-mode');
+        }
+
+        // Check and apply Halloween mode state from localStorage
+        if (localStorage.getItem('Halloween') === 'true') {
+            document.body.classList.add('halloween-mode');
+        }
+
+        function dark() {
+            document.body.classList.remove('halloween-mode');
+            localStorage.setItem('Halloween', 'false');
+            if (document.body.classList.contains('dark-mode')) {
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('Dark', 'false');
+            } else {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('Dark', 'true');
+            }
+        }
+
+        function halloween() {
+            document.body.classList.remove('dark-mode');
+            localStorage.setItem('Dark', 'false');
+            if (document.body.classList.contains('halloween-mode')) {
+                document.body.classList.remove('halloween-mode');
+                localStorage.setItem('Halloween', 'false');
+            } else {
+                document.body.classList.add('halloween-mode');
+                localStorage.setItem('Halloween', 'true');
+            }
+        }
+
+        function toggleGame(game) {
+            if (currentGame !== null && currentGame !== game) {
+                pendingGame = game;
+                showAlert();
+                return;
+            }
+            if (currentGame === game) {
+                gameArea.innerHTML = '';
+                currentGame = null;
+            } else {
+                currentGame = game;
+                selectGame(game);
+            }
+        }
+
+        function selectGame(game) {
+            if (game === 1) {
+                numberGame();
+            } else if (game === 2) {
+                rockPaperScissors();
+            } else if (game === 3) {
+                customGame();
+            } else if (game === 4) {
+                tic();
+            } else if (game === 5) {
+                Memory();
+            } else if (game === 6) {
+                Invaders();
+            } else {
+                gameArea.innerHTML = 'This game is not in the options provided.';
+            }
+        }
+
+        function Memory() {
+            window.location.href = 'memory.html';
+        }
+
+        function tic() {
+            window.location.href = 'new.html';
+        }
+        
+        function Invaders() {
+            window.location.href = 'new2.html'
+        }
+
+        function numberGame() {
+            gameArea.innerHTML = `
+                <p>Try to guess the random number (1-10):</p>
+                <input type="number" id="guess" min="1" max="10">
+                <button onclick="checkNumber()">Submit</button>
+                <p id="result"></p>
+            `;
+
+            const randomNumber = Math.floor(Math.random() * 10) + 1;
+
+            window.checkNumber = function() {
+                const guess = parseInt(document.getElementById('guess').value);
+                const result = document.getElementById('result');
+                if (guess === randomNumber) {
+                    alert('Correct!');
+                    gameArea.innerHTML = '';
+                    currentGame = null;
+                    pendingGame = null;
+                } else if (guess > 10 || guess < 1) {
+                    alert('Invalid number.');
+                    gameArea.innerHTML = '';
+                    currentGame = null;
+                    pendingGame = null;
+                } else {
+                    alert('Incorrect.');
+                    gameArea.innerHTML = '';
+                    currentGame = null;
+                    pendingGame = null;
+                }
+            };
+        }
+
+        function rockPaperScissors() {
+            gameArea.innerHTML = `
+                <p>Enter your choice (rock, paper, or scissors):</p>
+                <input type="text" id="playerChoice">
+                <button onclick="playRPS()">Submit</button>
+                <p id="result"></p>
+            `;
+
+            window.playRPS = function() {
+                const playerChoice = document.getElementById('playerChoice').value.toLowerCase();
+                const choices = ['rock', 'paper', 'scissors'];
+                const computerChoice = choices[Math.floor(Math.random() * 3)];
+                const result = document.getElementById('result');
+
+                if (playerChoice === computerChoice) {
+                    alert('You tied!');
+                    gameArea.innerHTML = '';
+                    currentGame = null;
+                    pendingGame = null;
+                } else if (
+                    (playerChoice === 'rock' && computerChoice === 'scissors') ||
+                    (playerChoice === 'paper' && computerChoice === 'rock') ||
+                    (playerChoice === 'scissors' && computerChoice === 'paper')
+                ) {
+                    alert('You win!');
+                    gameArea.innerHTML = '';
+                    currentGame = null;
+                    pendingGame = null;
+                } else {
+                    alert('You lose!');
+                    gameArea.innerHTML = '';
+                    currentGame = null;
+                    pendingGame = null;
+                }
+            };
+        }
+
+        function customGame() {
+            const questions = [
+                {question: "Can a match box?", answer: "no but a tin can"},
+                {question: "What is 2 + 2?", answer: "4"},
+                {question: "What is the largest planet in our solar system?", answer: "Jupiter"},
+                {question: "Who wrote 'To Kill a Mockingbird'?", answer: "Harper Lee"},
+                {question: "What is the boiling point of water in Celsius?", answer: "100"}
+            ];
+
+            gameArea.innerHTML = `
+                <p>All numbered questions will be numerically answered, not with 'two' but instead, '2'</p>
+                <div id="quizArea"></div>
+                <p id="score"></p>
+            `;
+
+            let score = 0;
+            let currentQuestion = 0;
+
+            function askQuestion() {
+                if (currentQuestion < questions.length) {
+                    const quizArea = document.getElementById('quizArea');
+                    quizArea.innerHTML = `
+                        <p>${questions[currentQuestion].question}</p>
+                        <input type="text" id="answer">
+                        <button onclick="checkAnswer()">Submit</button>
+                    `;
+                } else {
+                    document.getElementById('score').textContent = `You scored ${score} out of ${questions.length}`;
+                }
+            }
+
+            window.checkAnswer = function() {
+                const userAnswer = document.getElementById('answer').value.toLowerCase();
+                if (userAnswer === questions[currentQuestion].answer.toLowerCase()) {
+                    alert('Correct!');
+                    score++;
+                    currentQuestion++;
+                } else if (userAnswer === '') {
+                    alert('You did not type an answer.');
+                } else if (userAnswer.length < 2) {
+                    alert('Please answer the question.');
+                } else {
+                    alert('Incorrect.');
+                    currentQuestion++;
+                }
+                askQuestion();
+            };
+
+            askQuestion();
+        }
+
+        function showAlert() {
+            document.getElementById('customAlert').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function closeAlert() {
+            document.getElementById('customAlert').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        function clearGameArea() {
+            gameArea.innerHTML = '';
+            currentGame = null;
+            closeAlert();
+        }
+
+        document.getElementById('launchAnyways').addEventListener('click', function() {
+            closeAlert();
+            if (pendingGame !== null) {
+                currentGame = pendingGame;
+                pendingGame = null;
+                selectGame(currentGame);
+            }
+        });
+    </script>
+</body>
+</html>
